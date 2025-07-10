@@ -33,46 +33,40 @@ python library for building cli applications.
 
 ### pre-viz
 ```python
-from mini_cli import Command, Option, Argument
-
-
-def parse_file(data) -> tuple[bool, Optional[str], Optional[Any]]:
-    if Path(data).exists():
-        return True, "", Path(data)
-    return False, "Does not exist", None
+from mini_cli import Parsers, Cli, Command, Option, Argument
 
 
 class MySubCommand(Command):
-    arg1 = Argument()
+    args = Argument("args", nargs=-1)
 
     def run(self, args):
         print(args)
 
 
-class MyCli(Command):
+class MyCli(Cli):
     cmd1 = MySubCommand("subcmd")
 
     do = Option(
-        "custom_name_for_do",
-        names=("-d", "--do"),
+        ("-d", "--do"),
         helptext="file to do on",
         nargs=1,
-        parser=parse_file,
-        repeatable=True,
+        parser=Parsers.parse_file,
     )
     what = Option(
-        names=("-w", "--what"),
+        ("-w", "--what"),
         helptext="whether to what as well",
         nargs=0,
     )
     when = Option(
-        names=("--when"),
+        ("--when",),
         helptext="when to do",
         nargs=1,
     )
 
-    arg0 = Argument("other_file", helptext="..", parser=parse_file, position=0)
-    args = Argument(helptext="...", nargs=-1, position=1)
+    arg0 = Argument(
+        "arg0", helptext="..", parser=Parsers.parse_file, position=0
+    )
+    arg1 = Argument("arg1", helptext="...", position=1)
 
     def validate(self, args):
         if "what" in args and "do" not in args:
@@ -83,7 +77,5 @@ class MyCli(Command):
         print(args)
 
 
-my_cli = MyCli().build(
-    src=lambda: sys.argv[1:], completion=True, help=True, helptext=""
-)
+my_cli = MyCli("demo").build(src=..., completion=True, help=True, helptext="")
 ```
