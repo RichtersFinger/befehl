@@ -1,6 +1,7 @@
 """Definitions for class `Argument`."""
 
 from typing import Optional, Callable, Any
+import sys
 
 
 class Argument:
@@ -20,7 +21,12 @@ class Argument:
     ) -> None:
         self.__name = name
         self.__helptext = helptext
-        self.__nargs = nargs
+        if nargs == 0:
+            raise ValueError("Arguments do not support zero 'nargs'.")
+        if nargs < 0:
+            self.__nargs = -1
+        else:
+            self.__nargs = nargs
         self.__parser = parser
         self.__position = position
 
@@ -44,8 +50,11 @@ class Argument:
         """Returns `Argument` position."""
         return self.__position
 
-    def parse(self, data: Any) -> tuple[bool, Optional[str], Any]:
+    def parse(self, data: Any):
         """Returns response of `Argument`'s parser if available."""
         if self.__parser:
-            return self.__parser(data)
-        return True, None, data
+            ok, msg, data = self.__parser(data)
+            if not ok:
+                print(msg, file=sys.stderr)
+                sys.exit(1)
+        return data
