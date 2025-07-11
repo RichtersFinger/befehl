@@ -20,7 +20,7 @@ class Command:
         self.__name = name
         self.__helptext = helptext
         self.__options_map: dict[str, Option] = {}
-        self.__arguments_map: dict[int, Argument] = {}
+        self.__arguments_list: list[Argument] = []
         self.__subcommands: dict[
             str, Callable[[Optional[Iterable[str]]], None]
         ] = {}
@@ -41,7 +41,10 @@ class Command:
         """Performs options-validation."""
         # collect options
         options: list[Option] = list(
-            filter(lambda o: isinstance(o, Option), self.__dict__.values())
+            filter(
+                lambda o: isinstance(o, Option),
+                self.__class__.__dict__.values(),
+            )
         )
         if len(options) == 0:
             return
@@ -63,7 +66,7 @@ class Command:
         # check proper format
         # * whitespace
         for name in option_names:
-            if name.split() > 1:
+            if len(name.split()) > 1:
                 raise ValueError(
                     f"Bad option '{name.encode('string_escape')}' in command "
                     + f"'{command_name}' (must not contain whitespace).",
@@ -99,7 +102,10 @@ class Command:
         """Performs arguments-validation."""
         # collect arguments
         arguments: list[Argument] = list(
-            filter(lambda o: isinstance(o, Argument), self.__dict__.values())
+            filter(
+                lambda o: isinstance(o, Argument),
+                self.__class__.__dict__.values(),
+            )
         )
         if len(arguments) == 0:
             return
@@ -122,7 +128,7 @@ class Command:
                     arg
                     for arg in arguments
                     if (arg.position is None)
-                    is (arguments[0].position is None)
+                    is not (arguments[0].position is None)
                 ),
                 None,
             )
@@ -144,22 +150,24 @@ class Command:
                 positions.append(argument.position)
 
         # build map
-        self.__arguments_map.update(
-            dict(
-                enumerate(
-                    arguments
-                    if arguments[0].position is not None
-                    else sorted(arguments, lambda a: a.position)
-                )
-            )
+        self.__arguments_list.extend(
+            arguments
+            if arguments[0].position is not None
+            else sorted(arguments, key=lambda a: a.position)
         )
 
     def _validate_subcommands(
-        self, help_: bool, completion: bool, command_name: str
+        self,
+        help_: bool,
+        completion: bool,
+        command_name: str,
     ) -> None:
         """Performs subcommand-validation."""
         commands: list["Command"] = list(
-            filter(lambda o: isinstance(o, Command), self.__dict__.values())
+            filter(
+                lambda o: isinstance(o, Command),
+                self.__class__.__dict__.values(),
+            )
         )
         if len(commands) == 0:
             return
@@ -176,7 +184,7 @@ class Command:
             command_names.append(command.name.strip())
         # * whitespace
         for name in command_names:
-            if name.split() > 1:
+            if len(name.split()) > 1:
                 raise ValueError(
                     f"Bad subcommand '{name.encode('string_escape')}' in "
                     + f"command '{command_name}' (must not contain "
@@ -192,8 +200,8 @@ class Command:
 
         # build map
         for command in commands:
-            self.__options_map[command.name.strip()] = command.build(
-                help_, completion, command_name
+            self.__subcommands[command.name.strip()] = command.build(
+                help_, completion, loc=command_name
             )
 
     def _parse(self, raw: Iterable[str]) -> dict[str, Any]:
@@ -221,13 +229,13 @@ class Command:
         self._validate_subcommands(help_, completion, command_name)
 
         # define command logic
-        def command(raw: Optional[Iterable[str]]) -> None:
+        def command(raw: Optional[Iterable[str]] = None) -> None:
             # load raw input
             if raw is None:
                 raw = sys.argv[1:]
 
             # determine subcommand
-            if raw[0] in self.__subcommands:
+            if len(raw) > 0 and raw[0] in self.__subcommands:
                 self.__subcommands[raw[0]](raw[1:])
 
             # parse
