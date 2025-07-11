@@ -204,10 +204,81 @@ class Command:
                 help_, completion, loc=command_name
             )
 
-    def _parse(self, raw: Iterable[str]) -> dict[str, Any]:
+    def _parse(self, raw: Iterable[str]) -> dict[str, list[Any]]:
         """Parse given raw input."""
-        # TODO
-        return {}
+        unprocessed = list(reversed(raw))
+        result = {}
+
+        # TODO: resolve short-options
+
+        # process options
+        while len(unprocessed) > 0:
+            arg = unprocessed[-1]
+            # find relevant option
+            if arg in self.__options_map:
+                unprocessed.pop()
+                option = self.__options_map[arg]
+                option_name = option.names[0]
+                # initialize
+                if option_name not in result:
+                    result[option_name] = []
+            else:
+                # options exhausted
+                break
+
+            # collect values for that option
+            while len(unprocessed) > 0 and (
+                len(result[option_name]) < option.nargs
+            ):
+                value = unprocessed[-1]
+                if value in self.__options_map:
+                    # validate if strict
+                    if (
+                        option.strict
+                        and len(result[option_name]) != option.nargs
+                    ):
+                        print(
+                            f"Option '{option_name}' got an unexpected number "
+                            + f"of arguments (expected {option.nargs} but "
+                            + f"got {len(result[option_name])})",
+                            file=sys.stderr,
+                        )
+                        sys.exit(1)
+
+                    # next option
+                    break
+                result[option.names[0]].append(option.parse(value))
+                unprocessed.pop()
+
+        # process arguments
+        for argument in self.__arguments_list:
+            result[argument.name] = []
+            if argument.nargs < 0:
+                result[argument.name].extend(map(argument.parse, unprocessed))
+                unprocessed.clear()
+            else:
+                for _ in range(argument.nargs):
+                    if len(unprocessed) == 0:
+                        print(
+                            f"Argument '{argument.name}' got too few values "
+                            + f"(expected {argument.nargs} but got "
+                            + f"{len(result[argument.name])})",
+                            file=sys.stderr,
+                        )
+                        sys.exit(1)
+                    result[argument.name].append(
+                        argument.parse(unprocessed.pop())
+                    )
+
+        if len(unprocessed) > 0:
+            print(
+                f"Command '{self.name}' got {len(unprocessed)} extra-"
+                + "argument(s).",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        return result
 
     def build(
         self,
@@ -261,13 +332,13 @@ class Command:
     def validate(
         # pylint: disable=unused-argument
         self,
-        args: dict[str, Any],
+        args: dict[str, list[Any]],
     ) -> tuple[bool, Optional[str]]:
         """Post-parse validation of input"""
         return True, None
 
     @abstractmethod
-    def run(self, args: dict[str, Any]) -> None:
+    def run(self, args: dict[str, list[Any]]) -> None:
         """`Command`'s business logic."""
         raise NotImplementedError("")
 
