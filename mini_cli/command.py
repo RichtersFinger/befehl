@@ -1,7 +1,8 @@
 """Definitions for class `Command`."""
 
-from typing import Callable, Optional, Iterable
+from typing import Callable, Optional, Iterable, Any
 from abc import abstractmethod
+import sys
 
 from .option import Option
 from .argument import Argument
@@ -20,6 +21,7 @@ class Command:
         self.__helptext = helptext
         self.__options_map: dict[str, Option] = {}
         self.__arguments_map: dict[int, Argument] = {}
+        self.__subcommands: dict[str, Callable[[Optional[Iterable[str]]], None]] = {}
 
     @property
     def name(self) -> str:
@@ -150,29 +152,68 @@ class Command:
             )
         )
 
+    def _validate_subcommands(self, command_name: str) -> None:
+        """Performs subcommand-validation."""
+        # TODO
+
+    def _parse(self, raw: Iterable[str]) -> dict[str, Any]:
+        """Parse given raw input."""
+        # TODO
+        return {}
+
     def build(
         self,
-        src: Callable[[], Iterable[str]],
         help_: bool = True,
         completion: bool = False,
+        *,
         loc: Optional[str] = None,
-    ) -> Callable[[], None]:
+    ) -> Callable[[Optional[Iterable[str]]], None]:
         """Returns cli-callable."""
         command_name = " ".join(loc + self.name)
 
         self._validate_options(help_, completion, command_name)
         self._validate_arguments(command_name)
+        self._validate_subcommands(command_name)
+
+        def command(raw: Optional[Iterable[str]]) -> None:
+            # load raw input
+            if raw is None:
+                raw = sys.argv[1:]
+
+            # determine subcommand
+            if raw[0] in self.__subcommands:
+                self.__subcommands[raw[0]](raw[1:])
+
+            # parse
+            args = self._parse(raw)
+
+            # help
+            # TODO
+
+            # generate autocomplete
+            # TODO
+
+            # validate
+            ok, msg = self.validate(args)
+            if not ok:
+                print(msg, file=sys.stderr)
+                sys.exit(1)
+
+            # run
+            self.run(args)
+
+        return command
 
     def validate(
         # pylint: disable=unused-argument
         self,
-        args: dict,
+        args: dict[str, Any],
     ) -> tuple[bool, Optional[str]]:
         """Post-parse validation of input"""
         return True, None
 
     @abstractmethod
-    def run(self, args: dict) -> None:
+    def run(self, args: dict[str, Any]) -> None:
         """`Command`'s business logic."""
         raise NotImplementedError("")
 
