@@ -21,7 +21,9 @@ class Command:
         self.__helptext = helptext
         self.__options_map: dict[str, Option] = {}
         self.__arguments_map: dict[int, Argument] = {}
-        self.__subcommands: dict[str, Callable[[Optional[Iterable[str]]], None]] = {}
+        self.__subcommands: dict[
+            str, Callable[[Optional[Iterable[str]]], None]
+        ] = {}
 
     @property
     def name(self) -> str:
@@ -91,7 +93,7 @@ class Command:
         # build map
         for option in options:
             for name in option.names:
-                self.__options_map[name] = option
+                self.__options_map[name.strip()] = option
 
     def _validate_arguments(self, command_name: str) -> None:
         """Performs arguments-validation."""
@@ -139,7 +141,7 @@ class Command:
                         f"Bad arguments in command '{command_name}' (conflict "
                         + f"for position '{argument.position}')."
                     )
-                positions.append(argument)
+                positions.append(argument.position)
 
         # build map
         self.__arguments_map.update(
@@ -152,9 +154,47 @@ class Command:
             )
         )
 
-    def _validate_subcommands(self, command_name: str) -> None:
+    def _validate_subcommands(
+        self, help_: bool, completion: bool, command_name: str
+    ) -> None:
         """Performs subcommand-validation."""
-        # TODO
+        commands: list["Command"] = list(
+            filter(lambda o: isinstance(o, Command), self.__dict__.values())
+        )
+        if len(commands) == 0:
+            return
+
+        # check
+        # * duplicate names
+        command_names = []
+        for command in commands:
+            if command.name in command_names:
+                raise ValueError(
+                    f"Ambiguous subcommand '{command.name}' in command "
+                    + f"'{command_name}'."
+                )
+            command_names.append(command.name.strip())
+        # * whitespace
+        for name in command_names:
+            if name.split() > 1:
+                raise ValueError(
+                    f"Bad subcommand '{name.encode('string_escape')}' in "
+                    + f"command '{command_name}' (must not contain "
+                    + "whitespace).",
+                )
+        # * leading character
+        for name in command_names:
+            if name.startswith("-"):
+                raise ValueError(
+                    f"Bad subcommand '{name}' in command '{command_name}' "
+                    + "(must not start with '-').",
+                )
+
+        # build map
+        for command in commands:
+            self.__options_map[command.name.strip()] = command.build(
+                help_, completion, command_name
+            )
 
     def _parse(self, raw: Iterable[str]) -> dict[str, Any]:
         """Parse given raw input."""
@@ -169,12 +209,18 @@ class Command:
         loc: Optional[str] = None,
     ) -> Callable[[Optional[Iterable[str]]], None]:
         """Returns cli-callable."""
-        command_name = " ".join(loc + self.name)
+        # prepare
+        if loc is None:
+            command_name = self.name.strip()
+        else:
+            command_name = loc + f" {self.name.strip()}"
 
+        # validate and build components
         self._validate_options(help_, completion, command_name)
         self._validate_arguments(command_name)
-        self._validate_subcommands(command_name)
+        self._validate_subcommands(help_, completion, command_name)
 
+        # define command logic
         def command(raw: Optional[Iterable[str]]) -> None:
             # load raw input
             if raw is None:
