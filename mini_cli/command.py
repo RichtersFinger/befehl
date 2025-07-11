@@ -19,6 +19,7 @@ class Command:
         self.__name = name
         self.__helptext = helptext
         self.__options_map: dict[str, Option] = {}
+        self.__arguments_map: dict[int, Argument] = {}
 
     @property
     def name(self) -> str:
@@ -31,18 +32,21 @@ class Command:
         return self.__helptext
 
     def _validate_options(
-        self, help_: bool, completion: bool, loc: list[str]
+        self, help_: bool, completion: bool, command_name: str
     ) -> None:
         """Performs options-validation."""
-        command_name = " ".join(loc + self.name)
-
-        # validate option names
+        # collect options
         options: list[Option] = list(
             filter(lambda o: isinstance(o, Option), self.__dict__.values())
         )
+        if len(options) == 0:
+            return
+
         option_names = (["-h", "--help"] if help_ else []) + (
             ["--generate-autocomplete"] if completion else []
         )
+
+        # uniqueness + collect names
         for option in options:
             for name in option.names:
                 if name in option_names:
@@ -87,6 +91,65 @@ class Command:
             for name in option.names:
                 self.__options_map[name] = option
 
+    def _validate_arguments(self, command_name: str) -> None:
+        """Performs arguments-validation."""
+        # collect arguments
+        arguments: list[Argument] = list(
+            filter(lambda o: isinstance(o, Argument), self.__dict__.values())
+        )
+        if len(arguments) == 0:
+            return
+
+        # check
+        # * nargs<0 cannot be combined
+        if len(arguments) > 1:
+            bad_arg = next((arg for arg in arguments if arg.nargs < 0), None)
+            if bad_arg is not None:
+                raise ValueError(
+                    f"Bad argument '{bad_arg.name}' in command "
+                    + f"'{command_name}' (unlimited 'nargs' must not be "
+                    + "combined with other arguments)."
+                )
+
+        # * none or all arguments have position
+        if len(arguments) > 1:
+            bad_arg = next(
+                (
+                    arg
+                    for arg in arguments
+                    if (arg.position is None)
+                    is (arguments[0].position is None)
+                ),
+                None,
+            )
+            if bad_arg is not None:
+                raise ValueError(
+                    f"Bad arguments in command '{command_name}' (either "
+                    + "all arguments or none must get 'position'-keyword)."
+                )
+
+        # * duplicate positions
+        if arguments[0].position is not None:
+            positions = []
+            for argument in arguments:
+                if argument.position in positions:
+                    raise ValueError(
+                        f"Bad arguments in command '{command_name}' (conflict "
+                        + f"for position '{argument.position}')."
+                    )
+                positions.append(argument)
+
+        # build map
+        self.__arguments_map.update(
+            dict(
+                enumerate(
+                    arguments
+                    if arguments[0].position is not None
+                    else sorted(arguments, lambda a: a.position)
+                )
+            )
+        )
+
     def build(
         self,
         src: Callable[[], Iterable[str]],
@@ -95,7 +158,10 @@ class Command:
         loc: Optional[str] = None,
     ) -> Callable[[], None]:
         """Returns cli-callable."""
-        self._validate_options(help_, completion, loc or self.name)
+        command_name = " ".join(loc + self.name)
+
+        self._validate_options(help_, completion, command_name)
+        self._validate_arguments(command_name)
 
     def validate(
         # pylint: disable=unused-argument
