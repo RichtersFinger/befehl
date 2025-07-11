@@ -15,7 +15,7 @@ python library for building cli applications.
 ### features
 * automatic help
 * enable to generate (bash) autocomplete source-file via cli command (if activated)
-* short-option grouping (for shot/single-letter Options with nargs=0)
+* short-option grouping (for short/single-letter Options with nargs=0)
 
 ### misc
 * run-args is a dict that is populated with user-input via parsers
@@ -28,6 +28,7 @@ python library for building cli applications.
   * ..
 * fixed order "command [options] [arguments]"
 * nargs=-1 for any number of args
+  * only arguments
 * help-text output should adapt to shell size
 
 
