@@ -58,3 +58,10 @@ class Option:
                 print(msg, file=sys.stderr)
                 sys.exit(1)
         return data
+
+    def __str__(self):
+        return (
+            f"Option(names={self.names}, helptext={self.helptext}, "
+            + f"nargs={self.nargs}, strict={self.strict}, "
+            + f"parser={self.__parser})"
+        )

@@ -58,3 +58,10 @@ class Argument:
                 print(msg, file=sys.stderr)
                 sys.exit(1)
         return data
+
+    def __str__(self):
+        return (
+            f"Option(name={self.name}, helptext={self.helptext}, "
+            + f"nargs={self.nargs}, parser={self.__parser}, "
+            + f"position={self.position})"
+        )

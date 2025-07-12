@@ -35,6 +35,9 @@ class Command:
         """Returns `Command` helptext."""
         return self.__helptext
 
+    def __str__(self):
+        return f"Command(name={self.name}, helptext={self.helptext})"
+
     def _validate_options(
         self, help_: bool, completion: bool, command_name: str
     ) -> None:
@@ -58,8 +61,8 @@ class Command:
             for name in option.names:
                 if name in option_names:
                     raise ValueError(
-                        f"Ambiguous option name '{name}' in command "
-                        f"'{command_name}'.",
+                        f"Ambiguous name '{name}' in option {option} of "
+                        f"command '{command_name}'.",
                     )
                 option_names.append(name.strip())
 
@@ -130,9 +133,9 @@ class Command:
             bad_arg = next((arg for arg in arguments if arg.nargs < 0), None)
             if bad_arg is not None:
                 raise ValueError(
-                    f"Bad argument '{bad_arg.name}' in command "
-                    + f"'{command_name}' (unlimited 'nargs' must not be "
-                    + "combined with other arguments)."
+                    f"Bad argument '{bad_arg}' in command '{command_name}' "
+                    + "(unlimited 'nargs' must not be combined with other "
+                    + "arguments)."
                 )
 
         # * none or all arguments have position
@@ -192,7 +195,7 @@ class Command:
         for command in commands:
             if command.name in command_names:
                 raise ValueError(
-                    f"Ambiguous subcommand '{command.name}' in command "
+                    f"Ambiguous subcommand '{command}' in command "
                     + f"'{command_name}'."
                 )
             command_names.append(command.name.strip())
