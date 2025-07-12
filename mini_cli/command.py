@@ -3,6 +3,8 @@
 from typing import Callable, Optional, Iterable, Any
 from abc import abstractmethod
 import sys
+import os
+from itertools import zip_longest
 
 from .option import Option
 from .argument import Argument
@@ -19,10 +21,20 @@ class Command:
     ) -> None:
         self.__name = name
         self.__helptext = helptext
+        self.__help_option = Option(
+            ("-h", "--help"),
+            helptext="Output this message and exit.",
+            nargs=0,
+        )
+        self.__autocomplete_option = Option(
+            ("--generate-autocomplete"),
+            helptext="...",
+            nargs=0,
+        )
         self.__options_map: dict[str, Option] = {}
         self.__arguments_list: list[Argument] = []
         self.__subcommands: dict[
-            str, Callable[[Optional[Iterable[str]]], None]
+            str, tuple[Command, Callable[[Optional[Iterable[str]]], None]]
         ] = {}
 
     @property
@@ -49,12 +61,17 @@ class Command:
                 self.__class__.__dict__.values(),
             )
         )
+
+        if help_:
+            options.append(self.__help_option)
+
+        if completion:
+            options.append(self.__autocomplete_option)
+
         if len(options) == 0:
             return
 
-        option_names = (["-h", "--help"] if help_ else []) + (
-            ["--generate-autocomplete"] if completion else []
-        )
+        option_names = []
 
         # uniqueness + collect names
         for option in options:
@@ -217,8 +234,9 @@ class Command:
 
         # build map
         for command in commands:
-            self.__subcommands[command.name.strip()] = command.build(
-                help_, completion, loc=command_name
+            self.__subcommands[command.name.strip()] = (
+                command,
+                command.build(help_, completion, loc=command_name),
             )
 
     def _parse_preprocess_options(
@@ -361,6 +379,9 @@ class Command:
 
         preprocessed = self._parse_preprocess_options(raw)
 
+        if self.__help_option in preprocessed:
+            self._print_help()
+
         # collect arguments by option
         result = {}
         unprocessed = list(reversed(preprocessed))
@@ -423,6 +444,130 @@ class Command:
 
         return result
 
+    def _print_help(self):
+        """Prints help to stdout then exit."""
+
+        def break_into_indented_lines(
+            text: Optional[str],
+            indent: int,
+            relative_indent: int,
+            width: int,
+        ) -> list[str]:
+            """Returns broken down text."""
+            if text is None:
+                return []
+            result = []
+            remainder = text
+            line = ""
+            while True:
+                if remainder.strip() == "":
+                    if line != "":
+                        result.append(line)
+                    break
+
+                # initialize line
+                if line.strip() == "":
+                    line = " " * (indent + relative_indent * (len(result) > 0))
+
+                # get next word
+                try:
+                    word, remainder = remainder.split(maxsplit=1)
+                except ValueError:
+                    word = remainder.strip()
+                    remainder = ""
+
+                # determine mode of operation
+                if len(line) + len(word) + 1 > width:
+                    if len(line.strip()) > 0:
+                        # try in next line
+                        remainder = word + " " + remainder
+                    else:
+                        remainder = (
+                            word[width - 1 - len(line) :] + " " + remainder
+                        )
+                        line += (
+                            " " * (len(line.strip()) > 0)
+                            + word[: width - 1 - len(line)]
+                        )
+                    result.append(line)
+                    line = ""
+                    continue
+
+                line += " " * (len(line.strip()) > 0) + word
+
+            return result
+
+        w, _ = os.get_terminal_size()
+        w = max(w, 41) - 3
+        lines = break_into_indented_lines(self.helptext, 0, 0, w)
+        indent = 2
+        space = 1
+
+        if len(lines) > 0:
+            lines += [""]
+
+        lines += break_into_indented_lines(
+            "Usage: [command] [subcommand] [options] [--] [args]", 0, indent, w
+        )
+
+        for category, records in [
+            (
+                "Subcommands:",
+                [
+                    (command[0].name, command[0])
+                    for command in self.__subcommands.values()
+                ],
+            ),
+            (
+                "Options:",
+                [
+                    (", ".join(sorted(option.names, key=len)), option)
+                    for option in set(self.__options_map.values())
+                ],
+            ),
+            (
+                "Arguments:",
+                [
+                    (
+                        argument.name
+                        + (
+                            ""
+                            if argument.nargs == 1
+                            else f" [1..{'n' if argument.nargs < 0 else argument.nargs}]"
+                        ),
+                        argument,
+                    )
+                    for argument in self.__arguments_list
+                ],
+            ),
+        ]:
+            if len(records) > 0:
+                lines += ["", category]
+                for record_name, record in sorted(records, key=lambda o: o[0]):
+                    w_left = min(round(w / 2), 35) - indent
+                    w_right = w - min(round(w / 2), 35) - space
+                    record_left = break_into_indented_lines(
+                        record_name,
+                        indent,
+                        indent,
+                        w_left,
+                    )
+                    record_right = break_into_indented_lines(
+                        record.helptext or "- no description provided -",
+                        indent,
+                        indent,
+                        w_right,
+                    )
+                    for left, right in zip_longest(
+                        record_left, record_right, fillvalue=""
+                    ):
+                        lines += [
+                            left + " " * (space + w_left - len(left)) + right
+                        ]
+
+        print("\n".join(lines))
+        sys.exit(0)
+
     def build(
         self,
         help_: bool = True,
@@ -450,13 +595,14 @@ class Command:
 
             # determine subcommand
             if len(raw) > 0 and raw[0] in self.__subcommands:
-                self.__subcommands[raw[0]](raw[1:])
+                self.__subcommands[raw[0]][1](raw[1:])
 
             # parse
             args = self._parse(raw)
 
             # help
-            # TODO
+            if help_ and ("-h" in args or "--help" in args):
+                self._print_help()
 
             # generate autocomplete
             # TODO
