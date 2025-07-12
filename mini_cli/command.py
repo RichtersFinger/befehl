@@ -78,6 +78,20 @@ class Command:
                     f"Bad option '{name}' in command '{command_name}' (must "
                     + "start with '-').",
                 )
+        # * -- not allowed
+        for name in option_names:
+            if name == "--":
+                raise ValueError(
+                    f"Bad option '{name}' in command '{command_name}' (must "
+                    + "not equal '--').",
+                )
+        # * = not allowed
+        for name in option_names:
+            if "=" in name:
+                raise ValueError(
+                    f"Bad option '{name}' in command '{command_name}' (must "
+                    + "not contain '=').",
+                )
         # * length (more than single hyphen)
         for name in option_names:
             if len(name) == 1:
@@ -111,7 +125,7 @@ class Command:
             return
 
         # check
-        # * nargs<0 cannot be combined
+        # * nargs<0 cannot be combined with any other
         if len(arguments) > 1:
             bad_arg = next((arg for arg in arguments if arg.nargs < 0), None)
             if bad_arg is not None:
@@ -204,22 +218,158 @@ class Command:
                 help_, completion, loc=command_name
             )
 
+    def _parse_preprocess_options(
+        self, raw: Iterable[str]
+    ) -> list[Option | str]:
+        """
+        Returns pre-processed raw-input.
+
+        Pre-processing options consists of
+        * validating requirements
+          * not allowed characters
+          * unknown options
+          * ..
+        * resolve input with '='-syntax or grouped short-options
+        * replaces option-names with Option-instances
+          * respects '--'-separator for options and arguments
+        """
+        preprocessed = []
+        post_options = False
+        for arg in raw:
+            if arg == "--":
+                post_options = True
+                preprocessed.append(arg)
+                continue
+
+            # resolve options with '=' if needed
+            if not post_options and "=" in arg:
+                op, value = arg.split("=", maxsplit=1)
+                if op in self.__options_map:
+                    preprocessed.extend([self.__options_map[op], value])
+                    continue
+
+            # resolve grouped short options
+            if (
+                not post_options
+                and len(arg) > 2
+                and arg[0] == "-"
+                and arg[1] != "-"
+            ):
+                if "=" in arg:
+                    print(
+                        "Syntax '<option-group>=<value>' not allowed",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+                split = list(map(lambda s: f"-{s}", arg[1:]))
+                for op in split:
+                    if op not in self.__options_map:
+                        print(f"Unknown option '{op}'", file=sys.stderr)
+                        sys.exit(1)
+                    if (
+                        self.__options_map[op].nargs > 0
+                        and self.__options_map[op].strict
+                    ):
+                        print(
+                            f"Missing arguments for option '{op}'",
+                            file=sys.stderr,
+                        )
+                        sys.exit(1)
+                    preprocessed.append(self.__options_map[op])
+                continue
+
+            # unknown options
+            if (
+                not post_options
+                and arg.startswith("-")
+                and arg not in self.__options_map
+            ):
+                print(
+                    f"Unknown option '{arg}'",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+
+            # regular option
+            if not post_options and arg in self.__options_map:
+                preprocessed.append(self.__options_map[arg])
+                continue
+
+            # regular argument
+            preprocessed.append(arg)
+
+        return preprocessed
+
+    def _parse_postprocess_options(self, result: dict[str, list[Any]]) -> None:
+        """
+        Post-processing options consists of
+        * validating violation of strict-options
+        """
+
+        # handle bad number of args for options
+        for option, values in result.items():
+            option = self.__options_map[option]
+            # validate strict options
+            if option.strict and len(values) != option.nargs:
+                print(
+                    f"Option '{option.names[0]}' got an unexpected number "
+                    + f"of arguments (expected {option.nargs} but "
+                    + f"got {len(values)})",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+
+    def _parse_preprocess_arguments(
+        self, unprocessed: Iterable[Option | str]
+    ) -> None:
+        """
+        Pre-processing arguments consists of
+        * validating unexpected remaining Options
+        """
+
+        # handle bad order of options
+        for arg in unprocessed:
+            # validate strict options
+            if isinstance(arg, Option):
+                print(
+                    f"Bad order, got option '{arg.names[0]}' in argument-"
+                    + "section (use -- separator)",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+
+    def _parse_postprocess_arguments(
+        self, unprocessed: Iterable[Option | str]
+    ) -> None:
+        """
+        Post-processing arguments consists of
+        * validating extra-arguments
+        """
+        if len(unprocessed) > 0:
+            print(
+                f"Command '{self.name}' got {len(unprocessed)} extra-"
+                + "argument(s)",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
     def _parse(self, raw: Iterable[str]) -> dict[str, list[Any]]:
         """Parse given raw input."""
-        unprocessed = list(reversed(raw))
+
+        preprocessed = self._parse_preprocess_options(raw)
+
+        # collect arguments by option
         result = {}
-
-        # TODO: resolve short-options
-
-        # process options
+        unprocessed = list(reversed(preprocessed))
         while len(unprocessed) > 0:
             arg = unprocessed[-1]
-            # find relevant option
-            if arg in self.__options_map:
+
+            # check if option
+            if isinstance(arg, Option):
                 unprocessed.pop()
-                option = self.__options_map[arg]
+                option = arg
                 option_name = option.names[0]
-                # initialize
+                # initialize collection
                 if option_name not in result:
                     result[option_name] = []
             else:
@@ -231,27 +381,23 @@ class Command:
                 len(result[option_name]) < option.nargs
             ):
                 value = unprocessed[-1]
-                if value in self.__options_map:
-                    # validate if strict
-                    if (
-                        option.strict
-                        and len(result[option_name]) != option.nargs
-                    ):
-                        print(
-                            f"Option '{option_name}' got an unexpected number "
-                            + f"of arguments (expected {option.nargs} but "
-                            + f"got {len(result[option_name])})",
-                            file=sys.stderr,
-                        )
-                        sys.exit(1)
-
+                if isinstance(value, Option) or value == "--":
                     # next option
                     break
-                result[option.names[0]].append(option.parse(value))
+                result[option_name].append(option.parse(value))
                 unprocessed.pop()
+
+        self._parse_postprocess_options(result)
+
+        self._parse_preprocess_arguments(unprocessed)
+
+        # remove separator if needed
+        if len(unprocessed) > 0 and unprocessed[-1] == "--":
+            unprocessed.pop()
 
         # process arguments
         for argument in self.__arguments_list:
+
             result[argument.name] = []
             if argument.nargs < 0:
                 result[argument.name].extend(map(argument.parse, unprocessed))
@@ -270,13 +416,7 @@ class Command:
                         argument.parse(unprocessed.pop())
                     )
 
-        if len(unprocessed) > 0:
-            print(
-                f"Command '{self.name}' got {len(unprocessed)} extra-"
-                + "argument(s).",
-                file=sys.stderr,
-            )
-            sys.exit(1)
+        self._parse_postprocess_arguments(unprocessed)
 
         return result
 
