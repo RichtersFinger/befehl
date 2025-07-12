@@ -9,7 +9,7 @@ class Option:
 
     def __init__(
         self,
-        names: Iterable[str],
+        names: str | Iterable[str],
         *,
         helptext: Optional[str] = None,
         nargs: Optional[int] = 1,
@@ -24,7 +24,7 @@ class Option:
             raise ValueError(
                 "Options do not support negative values for 'nargs'."
             )
-        self.__names = names
+        self.__names = (names,) if isinstance(names, str) else names
         self.__helptext = helptext
         self.__nargs = nargs
         self.__strict = strict
