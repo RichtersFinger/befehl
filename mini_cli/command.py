@@ -497,7 +497,10 @@ class Command:
 
             return result
 
-        w, _ = os.get_terminal_size()
+        try:
+            w, _ = os.get_terminal_size()
+        except OSError:
+            w = 100
         w = max(w, 41) - 3
         lines = break_into_indented_lines(self.helptext, 0, 0, w)
         indent = 2
