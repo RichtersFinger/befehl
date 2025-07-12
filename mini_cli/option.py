@@ -50,11 +50,11 @@ class Option:
         """Returns `Option` strict."""
         return self.__strict
 
-    def parse(self, data: Any) -> tuple[bool, Optional[str], Any]:
+    def parse(self, data: Any) -> Any:
         """Returns response of `Option`'s parser if available."""
         if self.__parser:
             ok, msg, data = self.__parser(data)
             if not ok:
                 print(msg, file=sys.stderr)
                 sys.exit(1)
-        return True, None, data
+        return data
