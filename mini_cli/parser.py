@@ -15,6 +15,25 @@ class Parser(ABC):
     """
 
     @staticmethod
+    def first(
+        *parsers: Callable[[str], tuple[bool, Optional[str], Optional[Any]]]
+    ):
+        """
+        Returns parser that iterates the provided `parsers` and returns on
+        first one returning ok.
+        """
+        def _(data):
+            msgs = []
+            for parser in parsers:
+                ok, msg, _data = parser(data)
+                if ok:
+                    return ok, msg, _data
+                msgs.append(msg)
+
+            return False, "; ".join(msgs), None
+        return _
+
+    @staticmethod
     def chain(
         *parsers: Callable[[str], tuple[bool, Optional[str], Optional[Any]]]
     ):

@@ -80,7 +80,7 @@ def test_file():
 
 
 def test_values():
-    """Test parser `Parser.parse_with_glob`."""
+    """Test parser `Parser.parse_with_values`."""
     ok, msg, data = Parser.parse_with_values(["a", "b"])("c")
     assert not ok
     print(msg)
@@ -102,7 +102,7 @@ def test_glob():
 
 
 def test_regex():
-    """Test parser `Parser.parse_with_glob`."""
+    """Test parser `Parser.parse_with_regex`."""
     ok, msg, data = Parser.parse_with_regex("[0-9]*")("a")
     assert not ok
     print(msg)
@@ -112,8 +112,29 @@ def test_regex():
     assert data == "0"
 
 
+def test_first():
+    """Test parser `Parser.first`."""
+    ok, msg, data = Parser.first(
+        Parser.parse_with_values(["a"]), Parser.parse_as_int
+    )("a")
+    assert ok
+    assert data == "a"
+
+    ok, msg, data = Parser.first(
+        Parser.parse_with_values(["a"]), Parser.parse_as_int
+    )("1")
+    assert ok
+    assert data == 1
+
+    ok, msg, data = Parser.first(
+        Parser.parse_with_values(["a"]), Parser.parse_as_int
+    )("b")
+    assert not ok
+    print(msg)
+
+
 def test_chain():
-    """Test parser `Parser.parse_with_glob`."""
+    """Test parser `Parser.chain`."""
     ok, msg, data = Parser.chain(
         Parser.parse_with_regex("[a-z]*"), Parser.parse_with_regex("[0-9]*")
     )("a0")
