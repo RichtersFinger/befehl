@@ -13,7 +13,7 @@ class Argument:
         name: str,
         *,
         helptext: Optional[str] = None,
-        nargs: Optional[int] = 1,
+        nargs: int = 1,
         parser: Optional[
             Callable[[str], tuple[bool, Optional[str], Optional[Any]]]
         ] = None,
