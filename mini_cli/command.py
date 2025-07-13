@@ -668,6 +668,7 @@ complete -o nosort -F {function_name}-completion {cli}
             # determine subcommand
             if len(raw) > 0 and raw[0] in self.__subcommands:
                 self.__subcommands[raw[0]][1](raw[1:])
+                return
 
             # parse
             args = self._parse(raw)
