@@ -1,9 +1,9 @@
-from .parser import Parsers
+from .parser import Parser
 from .argument import Argument
 from .option import Option
 from .command import Command, Cli
 
 
 __all__ = [
-    "Parsers", "Argument", "Option", "Command", "Cli",
+    "Parser", "Argument", "Option", "Command", "Cli",
 ]
