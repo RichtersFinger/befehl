@@ -61,7 +61,7 @@ class Argument:
 
     def __repr__(self):
         return (
-            f"Option(name={self.name}, helptext={self.helptext}, "
+            f"Argument(name={self.name}, helptext={self.helptext}, "
             + f"nargs={self.nargs}, parser={self.__parser}, "
             + f"position={self.position})"
         )
