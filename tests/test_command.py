@@ -210,3 +210,40 @@ class TestCommandBuild:
 
             _("test").build()
         print(exc_info.value)
+
+    def test_command_build_help(self):
+        """Test `Command.build` option conflicting with help."""
+
+        with pytest.raises(ValueError) as exc_info:
+            class _(_TestCommand):
+                o = Option("-h")
+
+            _("test").build()
+        print(exc_info.value)
+
+        with pytest.raises(ValueError) as exc_info:
+            class _(_TestCommand):
+                o = Option("--help")
+
+            _("test").build()
+        print(exc_info.value)
+
+        class _(_TestCommand):
+            o = Option("--help")
+
+        _("test").build(help_=False)
+
+    def test_command_build_completion(self):
+        """Test `Command.build` option conflicting with completion."""
+
+        with pytest.raises(ValueError) as exc_info:
+            class _(_TestCommand):
+                o = Option("--generate-autocomplete")
+
+            _("test").build(completion=True)
+        print(exc_info.value)
+
+        class _(_TestCommand):
+            o = Option("--generate-autocomplete")
+
+        _("test").build()
