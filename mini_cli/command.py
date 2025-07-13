@@ -343,7 +343,9 @@ complete -o nosort -F {function_name}-completion {cli}
 
         return preprocessed
 
-    def _parse_postprocess_options(self, result: dict[str, list[Any]]) -> None:
+    def _parse_postprocess_options(
+        self, result: dict[Option | Argument, list[Any]]
+    ) -> None:
         """
         Post-processing options consists of
         * validating violation of strict-options
@@ -351,7 +353,6 @@ complete -o nosort -F {function_name}-completion {cli}
 
         # handle bad number of args for options
         for option, values in result.items():
-            option = self.__options_map[option]
             # validate strict options
             if option.strict and len(values) != option.nargs:
                 print(
@@ -396,7 +397,7 @@ complete -o nosort -F {function_name}-completion {cli}
             )
             sys.exit(1)
 
-    def _parse(self, raw: Iterable[str]) -> dict[str, list[Any]]:
+    def _parse(self, raw: Iterable[str]) -> dict[Option | Argument, list[Any]]:
         """Parse given raw input."""
 
         preprocessed = self._parse_preprocess_options(raw)
@@ -420,20 +421,20 @@ complete -o nosort -F {function_name}-completion {cli}
                 option_name = option.names[0]
                 # initialize collection
                 if option_name not in result:
-                    result[option_name] = []
+                    result[option] = []
             else:
                 # options exhausted
                 break
 
             # collect values for that option
             while len(unprocessed) > 0 and (
-                len(result[option_name]) < option.nargs
+                len(result[option]) < option.nargs
             ):
                 value = unprocessed[-1]
                 if isinstance(value, Option) or value == "--":
                     # next option
                     break
-                result[option_name].append(option.parse(value))
+                result[option].append(option.parse(value))
                 unprocessed.pop()
 
         self._parse_postprocess_options(result)
@@ -447,9 +448,9 @@ complete -o nosort -F {function_name}-completion {cli}
         # process arguments
         for argument in self.__arguments_list:
 
-            result[argument.name] = []
+            result[argument] = []
             if argument.nargs < 0:
-                result[argument.name].extend(map(argument.parse, unprocessed))
+                result[argument].extend(map(argument.parse, unprocessed))
                 unprocessed.clear()
             else:
                 for _ in range(argument.nargs):
@@ -457,13 +458,11 @@ complete -o nosort -F {function_name}-completion {cli}
                         print(
                             f"Argument '{argument.name}' got too few values "
                             + f"(expected {argument.nargs} but got "
-                            + f"{len(result[argument.name])})",
+                            + f"{len(result[argument])})",
                             file=sys.stderr,
                         )
                         sys.exit(1)
-                    result[argument.name].append(
-                        argument.parse(unprocessed.pop())
-                    )
+                    result[argument].append(argument.parse(unprocessed.pop()))
 
         self._parse_postprocess_arguments(unprocessed)
 
@@ -688,13 +687,13 @@ complete -o nosort -F {function_name}-completion {cli}
     def validate(
         # pylint: disable=unused-argument
         self,
-        args: dict[str, list[Any]],
+        args: dict[Option | Argument, list[Any]],
     ) -> tuple[bool, Optional[str]]:
         """Post-parse validation of input"""
         return True, None
 
     @abstractmethod
-    def run(self, args: dict[str, list[Any]]) -> None:
+    def run(self, args: dict[Option | Argument, list[Any]]) -> None:
         """`Command`'s business logic."""
         raise NotImplementedError("")
 
