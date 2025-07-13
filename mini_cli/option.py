@@ -3,6 +3,7 @@
 from typing import Iterable, Optional, Callable, Any
 import sys
 
+from .common import quote_list
 
 class Option:
     """CLI-option."""
@@ -59,9 +60,12 @@ class Option:
                 sys.exit(1)
         return data
 
-    def __str__(self):
+    def __repr__(self):
         return (
             f"Option(names={self.names}, helptext={self.helptext}, "
             + f"nargs={self.nargs}, strict={self.strict}, "
             + f"parser={self.__parser})"
         )
+
+    def __str__(self):
+        return quote_list(self.names)

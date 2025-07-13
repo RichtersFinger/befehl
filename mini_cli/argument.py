@@ -59,9 +59,12 @@ class Argument:
                 sys.exit(1)
         return data
 
-    def __str__(self):
+    def __repr__(self):
         return (
             f"Option(name={self.name}, helptext={self.helptext}, "
             + f"nargs={self.nargs}, parser={self.__parser}, "
             + f"position={self.position})"
         )
+
+    def __str__(self):
+        return self.name

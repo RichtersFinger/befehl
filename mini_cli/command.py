@@ -67,8 +67,11 @@ complete -o nosort -F {function_name}-completion {cli}
         """Returns `Command` helptext."""
         return self.__helptext
 
-    def __str__(self):
+    def __repr__(self):
         return f"Command(name={self.name}, helptext={self.helptext})"
+
+    def __str__(self):
+        return self.name
 
     def _validate_options(
         self, help_: bool, completion: bool, command_name: str
