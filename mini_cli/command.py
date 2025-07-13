@@ -209,7 +209,7 @@ complete -o nosort -F {function_name}-completion {cli}
         # build map
         self.__arguments_list.extend(
             arguments
-            if arguments[0].position is not None
+            if arguments[0].position is None
             else sorted(arguments, key=lambda a: a.position)
         )
 
