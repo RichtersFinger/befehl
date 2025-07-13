@@ -6,6 +6,7 @@ import sys
 import os
 from itertools import zip_longest
 
+from .common import quote_list
 from .option import Option
 from .argument import Argument
 
@@ -333,8 +334,8 @@ class Command:
             # validate strict options
             if option.strict and len(values) != option.nargs:
                 print(
-                    f"Option '{option.names[0]}' got an unexpected number "
-                    + f"of arguments (expected {option.nargs} but "
+                    f"Option {quote_list(option.names)} got an unexpected "
+                    + f"number of arguments (expected {option.nargs} but "
                     + f"got {len(values)})",
                     file=sys.stderr,
                 )
@@ -353,8 +354,8 @@ class Command:
             # validate strict options
             if isinstance(arg, Option):
                 print(
-                    f"Bad order, got option '{arg.names[0]}' in argument-"
-                    + "section (use -- separator)",
+                    f"Bad order, got option {quote_list(arg.names)} in "
+                    + "argument-section (use -- separator)",
                     file=sys.stderr,
                 )
                 sys.exit(1)
