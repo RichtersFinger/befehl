@@ -386,11 +386,11 @@ complete -o nosort -F {function_name}-completion {cli}
     ) -> None:
         """
         Post-processing arguments consists of
-        * validating extra-arguments
+        * validating extra arguments
         """
         if len(unprocessed) > 0:
             print(
-                f"Command '{self.name}' got {len(unprocessed)} extra-"
+                f"Command '{self.name}' got {len(unprocessed)} extra "
                 + "argument(s)",
                 file=sys.stderr,
             )
