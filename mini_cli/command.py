@@ -14,6 +14,25 @@ from .argument import Argument
 class Command:
     """CLI-command."""
 
+    _BASH_COMPLETION_TEMPLATE = """{function_name}-completion()
+{{
+    local cur command files
+
+    cur=${{COMP_WORDS[COMP_CWORD]}}
+    command="${{COMP_WORDS[*]}}"
+    files=$(compgen -f -- "$cur")
+
+    case "$command" in
+{completion_cases}
+    esac
+}}
+
+complete -o nosort -F {function_name}-completion {cli}
+"""
+    _BASH_COMPLETION_CASE_TEMPLATE = """        "{subcommand} "*)
+            COMPREPLY=($(compgen -W "{words}" -- ${{cur}}) $files)
+            ;;"""
+
     def __init__(
         self,
         name: str,
@@ -29,7 +48,7 @@ class Command:
         )
         self.__autocomplete_option = Option(
             ("--generate-autocomplete"),
-            helptext="...",
+            helptext="Output source-file for bash autocomplete",
             nargs=0,
         )
         self.__options_map: dict[str, Option] = {}
@@ -194,7 +213,6 @@ class Command:
     def _validate_subcommands(
         self,
         help_: bool,
-        completion: bool,
         command_name: str,
     ) -> None:
         """Performs subcommand-validation."""
@@ -237,7 +255,7 @@ class Command:
         for command in commands:
             self.__subcommands[command.name.strip()] = (
                 command,
-                command.build(help_, completion, loc=command_name),
+                command.build(help_=help_, completion=False, loc=command_name),
             )
 
     def _parse_preprocess_options(
@@ -382,6 +400,9 @@ class Command:
 
         if self.__help_option in preprocessed:
             self._print_help()
+
+        if self.__autocomplete_option in preprocessed:
+            self._print_autocomplete()
 
         # collect arguments by option
         result = {}
@@ -572,11 +593,54 @@ class Command:
         print("\n".join(lines))
         sys.exit(0)
 
+    def _get_completion_words(self) -> str:
+        """
+        Returns a list of strings to be used as completion-words for
+        self.
+        """
+        return " ".join(
+            list(self.__subcommands.keys())
+            + [
+                " ".join(option.names)
+                for option in set(self.__options_map.values())
+                if option != self.__autocomplete_option
+            ]
+        )
+
+    def get_completion_cases(self, subcommand: str) -> str:
+        """
+        Returns formatted template for completion cases for this and
+        all subcommands.
+        """
+        cases = [
+            command.get_completion_cases(
+                subcommand + " " + command.name.strip()
+            )
+            for command, _ in self.__subcommands.values()
+        ]
+        cases.append(
+            self._BASH_COMPLETION_CASE_TEMPLATE.format(
+                subcommand=subcommand, words=self._get_completion_words()
+            )
+        )
+        return "\n".join(cases)
+
+    def _print_autocomplete(self):
+        """Prints autocomplete and exists."""
+        print(
+            self._BASH_COMPLETION_TEMPLATE.format(
+                function_name="_" + self.name.strip().upper(),
+                completion_cases=self.get_completion_cases(self.name.strip()),
+                cli=self.name.strip(),
+            )
+        )
+        sys.exit(0)
+
     def build(
         self,
-        help_: bool = True,
-        completion: bool = False,
         *,
+        help_: bool = True,
+        completion: Optional[bool] = None,
         loc: Optional[str] = None,
     ) -> Callable[[Optional[Iterable[str]]], None]:
         """Returns cli-callable."""
@@ -586,10 +650,13 @@ class Command:
         else:
             command_name = loc + f" {self.name.strip()}"
 
+        if completion is None:
+            completion = "_MINI_CLI_COMPLETION" in os.environ
+
         # validate and build components
         self._validate_options(help_, completion, command_name)
         self._validate_arguments(command_name)
-        self._validate_subcommands(help_, completion, command_name)
+        self._validate_subcommands(help_, command_name)
 
         # define command logic
         def command(raw: Optional[Iterable[str]] = None) -> None:
@@ -603,13 +670,6 @@ class Command:
 
             # parse
             args = self._parse(raw)
-
-            # help
-            if help_ and ("-h" in args or "--help" in args):
-                self._print_help()
-
-            # generate autocomplete
-            # TODO
 
             # validate
             ok, msg = self.validate(args)
