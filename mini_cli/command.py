@@ -111,8 +111,8 @@ complete -o nosort -F {function_name}-completion {cli}
         for name in option_names:
             if len(name.split()) > 1:
                 raise ValueError(
-                    f"Bad option '{name.encode('string_escape')}' in command "
-                    + f"'{command_name}' (must not contain whitespace).",
+                    f"Bad option {repr(name)} in command '{command_name}' "
+                    + "(must not contain whitespace).",
                 )
         # * startswith
         for name in option_names:
@@ -242,9 +242,8 @@ complete -o nosort -F {function_name}-completion {cli}
         for name in command_names:
             if len(name.split()) > 1:
                 raise ValueError(
-                    f"Bad subcommand '{name.encode('string_escape')}' in "
-                    + f"command '{command_name}' (must not contain "
-                    + "whitespace).",
+                    f"Bad subcommand {repr(name)} in command '{command_name}' "
+                    + "(must not contain whitespace).",
                 )
         # * leading character
         for name in command_names:
