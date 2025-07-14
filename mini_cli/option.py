@@ -7,7 +7,35 @@ from .common import quote_list
 
 
 class Option:
-    """CLI-option."""
+    """
+    CLI-option class.
+
+    Keyword arguments:
+    names -- option name(s)
+    helptext -- option description for auto-generated help-option
+                (defeault None)
+    nargs -- number of accepted values; a negative value is equivalent
+             to any number of values
+             (default 0)
+    strict -- if `True`, a command will exit with an error if the number
+              of user-provided values is lower than `nargs`
+              (default True)
+    parser -- custom parser-function for individual values
+
+              Should accept a value as string and return a tuple of
+              boolean (value ok), string (message if rejected), and
+              parsed data. For example to parse as integer:
+              ```
+              def parse_int(data):
+                try:
+                  number = int(data)
+                except ValueError:
+                  return False, f"input '{data}' is not an integer", None
+                return True, None, number
+              ```
+
+              (default None)
+    """
 
     def __init__(
         self,

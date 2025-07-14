@@ -5,7 +5,36 @@ import sys
 
 
 class Argument:
-    """CLI-argument."""
+    """
+    CLI-argument class.
+
+    Keyword arguments:
+    name -- argument name
+    helptext -- argument description for auto-generated help-option
+                (defeault None)
+    nargs -- number of accepted values; a negative value is equivalent
+             to any number of values
+             (default 1)
+    parser -- custom parser-function for individual values
+
+              Should accept a value as string and return a tuple of
+              boolean (value ok), string (message if rejected), and
+              parsed data. For example to parse as integer:
+              ```
+              def parse_int(data):
+                try:
+                  number = int(data)
+                except ValueError:
+                  return False, f"input '{data}' is not an integer", None
+                return True, None, number
+              ```
+
+              (default None)
+    position -- manually control `Argument` position in the context of a
+                `Command` (note that in a single `Command`, either all
+                or no `Arguments` should receive this keyword)
+                (default None, order in which `Argument`s are defined)
+    """
 
     # pylint: disable=too-many-arguments
     def __init__(

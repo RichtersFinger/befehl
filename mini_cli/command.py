@@ -12,7 +12,38 @@ from .argument import Argument
 
 
 class Command:
-    """CLI-command."""
+    """
+    CLI-command class.
+
+    Commands should inherit from this class and define `Option`s and
+    `Argument`s as class attributes. Furthermore, the method `run` needs
+    to be defined (containing the commands business logic). Optionally,
+    also an additional validation step can be defined which can be used
+    to validate more complex relations that cannot be handled by
+    parsers.
+        ```
+        class MyCli(Cli):
+            cmd = MySubCommand("subcommand")
+
+            opt0 = Option(("-o", "--option-zero"))
+            opt1 = Option(("-p", "--option-one"))
+
+            arg0 = Argument("arg", parser=Parser.parse_as_path)
+
+            def run(self, args):
+                # run business logic on parsed input
+                # ...
+
+            def validate(self, args):
+                # perform custom validation on parsed input
+                # ...
+        ```
+
+    Keyword arguments:
+    name -- command name
+    helptext -- command description for auto-generated help-option
+                (defeault None)
+    """
 
     _BASH_COMPLETION_TEMPLATE = """{function_name}-completion()
 {{
@@ -699,3 +730,4 @@ complete -o nosort -F {function_name}-completion {cli}
 
 
 Cli = Command
+"""Alias for `Command`."""
