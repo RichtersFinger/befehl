@@ -321,7 +321,7 @@ class TestCommandRun:
         """Test running `Command` option."""
 
         class Cli(self.MirrorCommand):
-            opt = Option(("-o", "--option"))
+            opt = Option(("-o", "--option"), nargs=1)
 
         base_cmd = Cli("test")
         cli = base_cmd.build()
@@ -334,7 +334,9 @@ class TestCommandRun:
 
         class Cli(self.MirrorCommand):
             opt = Option(
-                ("-o", "--option"), parser=lambda s: (True, None, s[::-1])
+                ("-o", "--option"),
+                nargs=1,
+                parser=lambda s: (True, None, s[::-1]),
             )
 
         base_cmd = Cli("test")
@@ -349,6 +351,7 @@ class TestCommandRun:
         class Cli(self.MirrorCommand):
             opt = Option(
                 ("-o", "--option"),
+                nargs=1,
                 parser=lambda s: (False, "bad parser", None),
             )
 
@@ -374,7 +377,7 @@ class TestCommandRun:
         """Test running `Command` option with value containing '='."""
 
         class Cli(self.MirrorCommand):
-            opt = Option(("-o", "--option"))
+            opt = Option(("-o", "--option"), nargs=1)
 
         base_cmd = Cli("test")
         cli = base_cmd.build()
@@ -429,7 +432,7 @@ class TestCommandRun:
         """Test running `Command` option missing not strict."""
 
         class Cli(self.MirrorCommand):
-            opt = Option(("-o", "--option"), strict=False)
+            opt = Option(("-o", "--option"), nargs=1, strict=False)
 
         base_cmd = Cli("test")
         cli = base_cmd.build()
@@ -505,7 +508,7 @@ class TestCommandRun:
         """Test running `Command` more complex subcommand."""
 
         class Subcommand(self.MirrorCommand):
-            opt = Option(("-o", "--sub-option"))
+            opt = Option(("-o", "--sub-option"), nargs=1)
             arg = Argument("sub_arg", nargs=-1)
 
         class Cli(self.MirrorCommand):

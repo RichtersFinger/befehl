@@ -5,6 +5,7 @@ import sys
 
 from .common import quote_list
 
+
 class Option:
     """CLI-option."""
 
@@ -13,7 +14,7 @@ class Option:
         names: str | Iterable[str],
         *,
         helptext: Optional[str] = None,
-        nargs: Optional[int] = 1,
+        nargs: Optional[int] = 0,
         strict: bool = True,
         parser: Optional[
             Callable[[str], tuple[bool, Optional[str], Optional[Any]]]
