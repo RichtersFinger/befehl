@@ -9,13 +9,13 @@ try:
     )
 except FileNotFoundError:
     long_description = (
-        "See docs at https://github.com/RichtersFinger/mini-cli"
+        "See docs at https://github.com/RichtersFinger/befehl"
     )
 
 
 setup(
     version=os.environ.get("VERSION", "0.1.0"),
-    name="mini-cli",
+    name="befehl",
     description=(
         "a declarative, modular, lightweight, and versatile python library "
         + "for building cli applications"
@@ -25,13 +25,13 @@ setup(
     author="Steffen Richters-Finger",
     author_email="srichters@uni-muenster.de",
     license="MIT",
-    url="https://pypi.org/project/mini-cli/",
-    project_urls={"Source": "https://github.com/RichtersFinger/mini-cli"},
+    url="https://pypi.org/project/befehl/",
+    project_urls={"Source": "https://github.com/RichtersFinger/befehl"},
     python_requires=">=3.10",
     install_requires=[],
     extras_require={},
     packages=[
-        "mini_cli",
+        "befehl",
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",

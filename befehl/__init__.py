@@ -1,10 +1,10 @@
 """
-Python `mini-cli`.
+Python `befehl`.
 
 Example usage:
 
     ```
-    from mini_cli import Parser, Option, Argument, Command, Cli
+    from befehl import Parser, Option, Argument, Command, Cli
 
     # define subcommand
     class MySubCommand(Command):
@@ -42,7 +42,7 @@ Example usage:
 
 The callable `cli` can then be used as entry-point.
 
-See project README at `https://github.com/RichtersFinger/mini-cli` for
+See project README at `https://github.com/RichtersFinger/befehl` for
 details.
 """
 

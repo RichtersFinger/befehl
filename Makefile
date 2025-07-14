@@ -11,7 +11,7 @@ venv:
 test: venv
 	source "${VENV}/bin/activate" && \
 		pip install . && \
-		pip install pytest && \
+		pip install -r dev-requirements.txt && \
 		pytest
 
 build-dist: venv

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from mini_cli import Parser
+from befehl import Parser
 
 
 def test_boolean():

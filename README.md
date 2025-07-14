@@ -1,9 +1,9 @@
- ![Tests](https://github.com/RichtersFinger/mini-cli/actions/workflows/tests.yml/badge.svg?branch=main) ![PyPI - License](https://img.shields.io/pypi/l/mini-cli) ![GitHub top language](https://img.shields.io/github/languages/top/RichtersFinger/mini-cli) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mini-cli) ![PyPI version](https://badge.fury.io/py/mini-cli.svg) ![PyPI - Wheel](https://img.shields.io/pypi/wheel/mini-cli)
+ ![Tests](https://github.com/RichtersFinger/befehl/actions/workflows/tests.yml/badge.svg?branch=main) ![PyPI - License](https://img.shields.io/pypi/l/befehl) ![GitHub top language](https://img.shields.io/github/languages/top/RichtersFinger/befehl) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/befehl) ![PyPI version](https://badge.fury.io/py/befehl.svg) ![PyPI - Wheel](https://img.shields.io/pypi/wheel/befehl)
 
-# mini-cli
-A
+# befehl
+`befehl` (german for `command`) is a
 * declarative
-* modular (easily reuse definitions)
+* modular (easily reuse definitions),
 * lightweight (no external dependencies), and
 * versatile (highly customizable behavior through custom parsers and validation)
 
@@ -18,7 +18,7 @@ It features
 ## Example
 
 ```python
-from mini_cli import Parser, Option, Argument, Command, Cli
+from befehl import Parser, Option, Argument, Command, Cli
 
 # define subcommand
 class MySubCommand(Command):
@@ -151,7 +151,7 @@ setup(
 
 When building, it has to be decided, whether
 * a help-option (`-h, --help`) should be generated (enabled by default)
-* an option (`--generate-autocomplete`) for generating a sourcable bash-autocomplete script should be added (disabled by default; enabled if environment sets `_MINI_CLI_COMPLETION`). See [this section](#autocomplete) for details.
+* an option (`--generate-autocomplete`) for generating a sourcable bash-autocomplete script should be added (disabled by default; enabled if environment sets `_BEFEHL_COMPLETION`). See [this section](#autocomplete) for details.
 
 ### Parsers
 
@@ -212,7 +212,7 @@ The script can be built by first setting the `completion`-option during [build](
 
 The auto-completion can also be sourced immediately by entering
 ```
-eval "$(_MINI_CLI_COMPLETION= <entry-point> --generate-autocomplete)"
+eval "$(_BEFEHL_COMPLETION= <entry-point> --generate-autocomplete)"
 ```
 (replace `<entry-point>` with your custom entry-point).
 

@@ -683,7 +683,7 @@ complete -o nosort -F {function_name}-completion {cli}
             command_name = loc + f" {self.name.strip()}"
 
         if completion is None:
-            completion = "_MINI_CLI_COMPLETION" in os.environ
+            completion = "_BEFEHL_COMPLETION" in os.environ
 
         # validate and build components
         self._validate_options(help_, completion, command_name)

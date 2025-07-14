@@ -2,7 +2,7 @@
 
 import pytest
 
-from mini_cli import Argument, Option, Command
+from befehl import Argument, Option, Command
 
 
 class _TestCommand(Command):
