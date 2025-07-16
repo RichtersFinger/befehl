@@ -12,8 +12,9 @@ python library for building CLI applications.
 It features
 * a modern, declarative API,
 * QoL features like short-option grouping,
-* automatic generation of help-options, and
-* generation of bash-autocomplete source files.
+* automatic generation of help-options,
+* generation of bash-autocomplete source files, and
+* natural integration into automated tests.
 
 ## Example
 
@@ -215,6 +216,33 @@ The auto-completion can also be sourced immediately by entering
 eval "$(_BEFEHL_COMPLETION= <entry-point> --generate-autocomplete)"
 ```
 (replace `<entry-point>` with your custom entry-point).
+
+### Easy implementation of automated tests
+The callable that serves as an entry-point for the cli naturally allows for simple integration into automated test suites.
+To run tests on a cli, simply pass the test-input to the callable like
+```python
+cli = MyCli(...).build()
+
+cli(["subcommand", "--option", "value", ...])
+```
+
+Using inheritance, test-specific actions can be easily injected like so
+```python
+class MyTestCli(MyCli):
+    # ...
+
+    def run(self, args):
+        # test specifics like assertions etc.
+        # ...
+
+        super().run(args)
+
+        # more test specifics
+        # ...
+
+test_cli = MyTestCli(...).build()
+```
+See also the automated tests provided in [this repository](https://github.com/RichtersFinger/befehl).
 
 ## Tests
 
