@@ -452,9 +452,8 @@ complete -o nosort -F {function_name}-completion {cli}
             if isinstance(arg, Option):
                 unprocessed.pop()
                 option = arg
-                option_name = option.names[0]
                 # initialize collection
-                if option_name not in result:
+                if option not in result:
                     result[option] = []
             else:
                 # options exhausted

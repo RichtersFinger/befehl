@@ -345,6 +345,18 @@ class TestCommandRun:
             Cli.opt2: ["value4"],
         }
 
+    def test_command_run_option_multiple_flags(self):
+        """Test running `Command` option."""
+
+        class Cli(self.MirrorCommand):
+            opt = Option(("-o", "--option"), nargs=-1)
+
+        base_cmd = Cli("test")
+        cli = base_cmd.build()
+        cli(["-o", "value", "-o", "value2"])
+        assert base_cmd.ran
+        assert base_cmd.mirror == {Cli.opt: ["value", "value2"]}
+
     def test_command_run_option_parser(self):
         """Test running `Command` option."""
 
