@@ -50,10 +50,6 @@ class Option:
     ) -> None:
         if len(names) == 0:
             raise ValueError("An Option requires at least one name.")
-        if nargs < 0:
-            raise ValueError(
-                "Options do not support negative values for 'nargs'."
-            )
         self.__names = (names,) if isinstance(names, str) else names
         self.__helptext = helptext
         self.__nargs = nargs

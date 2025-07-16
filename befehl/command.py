@@ -384,7 +384,11 @@ complete -o nosort -F {function_name}-completion {cli}
         # handle bad number of args for options
         for option, values in result.items():
             # validate strict options
-            if option.strict and len(values) != option.nargs:
+            if (
+                option.nargs >= 0
+                and option.strict
+                and len(values) != option.nargs
+            ):
                 print(
                     f"Option {quote_list(option.names)} got an unexpected "
                     + f"number of arguments (expected {option.nargs} but "
@@ -458,7 +462,7 @@ complete -o nosort -F {function_name}-completion {cli}
 
             # collect values for that option
             while len(unprocessed) > 0 and (
-                len(result[option]) < option.nargs
+                option.nargs < 0 or len(result[option]) < option.nargs
             ):
                 value = unprocessed[-1]
                 if isinstance(value, Option) or value == "--":

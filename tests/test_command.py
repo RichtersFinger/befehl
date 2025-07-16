@@ -329,6 +329,22 @@ class TestCommandRun:
         assert base_cmd.ran
         assert base_cmd.mirror == {Cli.opt: ["value"]}
 
+    def test_command_run_option_neg_nargs(self):
+        """Test running `Command` option."""
+
+        class Cli(self.MirrorCommand):
+            opt1 = Option(("-o", "--option"), nargs=-1)
+            opt2 = Option(("-p", "--option-2"), nargs=-1)
+
+        base_cmd = Cli("test")
+        cli = base_cmd.build()
+        cli(["-o", "value", "value2", "value3", "-p", "value4"])
+        assert base_cmd.ran
+        assert base_cmd.mirror == {
+            Cli.opt1: ["value", "value2", "value3"],
+            Cli.opt2: ["value4"],
+        }
+
     def test_command_run_option_parser(self):
         """Test running `Command` option."""
 
