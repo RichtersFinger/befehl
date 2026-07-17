@@ -6,8 +6,9 @@
 * modular (easily reuse definitions),
 * lightweight (no external dependencies), and
 * versatile (highly customizable behavior through custom parsers and validation)
+* zero-dependency
 
-python library for building CLI applications.
+Python library for building CLI applications.
 
 It features
 * a modern, declarative API,
@@ -246,12 +247,7 @@ See also the automated tests provided in [this repository](https://github.com/Ri
 
 ## Tests
 
-Automated (`pytest`-)tests can be run by first installing this package as well as its dev-dependencies via
-```
-pip install .
-pip install -r dev-requirements.txt
-```
-Afterwards, simply enter
-```
-pytest
+Automated tests can be run with
+```bash
+python3 -m unittest discover tests/
 ```
