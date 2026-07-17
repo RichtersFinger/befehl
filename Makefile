@@ -2,17 +2,11 @@ SHELL := /bin/bash
 VENV := venv
 VERSION =
 
-_:
-	echo "Missing target."
-
 venv:
 	[ -d "${VENV}" ] || python3 -m venv venv
 
-test: venv
-	source "${VENV}/bin/activate" && \
-		pip install . && \
-		pip install -r dev-requirements.txt && \
-		pytest
+test:
+	python3 -m unittest discover tests/
 
 build-dist: venv
 	[ "${VERSION}" != "" ] && \
