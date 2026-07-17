@@ -14,7 +14,7 @@ except FileNotFoundError:
 
 
 setup(
-    version=os.environ.get("VERSION", "0.1.2"),
+    version=os.environ.get("VERSION", "0.1.3"),
     name="befehl",
     description=(
         "a declarative, modular, lightweight, and versatile python library "
